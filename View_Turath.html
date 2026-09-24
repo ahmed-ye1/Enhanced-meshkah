@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+        <!-- مكتبة تراث -->
+      <div id="turath-page" class="page">
+        <h2>مكتبة تراث <button class="btn btn-outline" style="padding:2px 5px; width:auto; float:left" onclick="nav('main-page')">عودة</button></h2>
+        
+        <!-- الصندوق الأخضر: البحث المباشر (كتاب / مؤلف) -->
+        <div class="input-group" style="background:#e8f5e9; padding:10px; border-radius:4px; border:1px solid #c8e6c9; margin-bottom: 15px;">
+          <h3 style="margin-top:0; margin-bottom:8px; color:#2e7d32; font-size:14px; border-bottom:1px solid #c8e6c9; padding-bottom:5px;">البحث المرجعي (كتاب / مؤلف)</h3>
+          
+          <div class="input-group" style="margin-bottom: 10px;">
+            <label>طريقة البحث:</label>
+            <select id="turath-search-mode" onchange="switchTurathMode()" style="border-color: #a5d6a7;">
+              <option value="book">بحث عن كتاب مباشرة</option>
+              <option value="author">بحث عن كتب مؤلف</option>
+            </select>
+          </div>
+
+          <div class="input-group" id="author-search-group" style="display: none; margin-bottom: 10px;">
+            <label>اختر المؤلف:</label>
+            <input type="text" list="authors-datalist" id="author-input" placeholder="اكتب اسم المؤلف..." onchange="onAuthorSelected()" style="border-color: #a5d6a7;">
+            <datalist id="authors-datalist"></datalist>
+          </div>
+
+          <div class="input-group" style="margin-bottom: 10px;">
+            <label>اختر الكتاب:</label>
+            <input type="text" list="books-datalist" id="book-input" placeholder="اكتب اسم الكتاب..." onchange="onBookSelected()" style="border-color: #a5d6a7;">
+            <datalist id="books-datalist"></datalist>
+          </div>
+
+          <div class="row input-group" style="margin-bottom: 10px;">
+            <div><label>المجلد (الجزء):</label><input type="number" id="turath-vol" min="1" value="1" style="border-color: #a5d6a7;"></div>
+            <div><label>رقم الصفحة:</label><input type="number" id="turath-pg" min="1" value="1" style="border-color: #a5d6a7;"></div>
+          </div>
+
+          <div class="filter-toggle" onclick="toggleFilter('turath-filters', 'turath-arrow')" style="color: #2e7d32; margin-bottom: 8px;">
+            <span id="turath-arrow">▼</span> خيارات المعاينة والتوثيق
+          </div>
+          <div id="turath-filters" class="filter-content" style="border-top-color: #c8e6c9; margin-bottom: 15px;">
+              <label style="font-weight:normal;">
+                <input type="checkbox" id="turath-remove-tashkeel" onchange="applyTurathTashkeelToggle()"> إزالة التشكيل من النص المستخرج
+              </label>
+          </div>
+
+          <button class="btn" style="background-color: #2e7d32;" onclick="previewTurathPage()">معاينة الصفحة</button>
+          
+          <div id="turath-preview-container" style="display:none; margin-top:15px; border-top: 1px dashed #c8e6c9; padding-top: 10px;">
+            <div style="font-size:12px; font-weight:bold; margin-bottom:5px; color:#2e7d32;">حدد النص المطلوب إدراجه:</div>
+            <textarea id="turath-preview-text" style="width:100%; height:120px; padding:8px; font-size:12px; border:1px solid #a5d6a7; border-radius:4px; box-sizing:border-box; resize:vertical;"></textarea>
+            <button class="btn btn-secondary" style="margin-top:8px; background-color: #2e7d32; border:none;" onclick="insertTurathCitation()">إدراج الإقتباس بتوثيقه</button>
+          </div>
+        </div>
+
+        <!-- الصندوق الأزرق: توثيق نص محدد -->
+        <div class="input-group" style="background:#e3f2fd; padding:10px; border-radius:4px; border:1px solid #bbdefb; margin-bottom: 15px;">
+          <h3 style="margin-top:0; margin-bottom:8px; color:#1565c0; font-size:14px; border-bottom:1px solid #bbdefb; padding-bottom:5px;">البحث العكسي (توثيق نص)</h3>
+          
+          <div id="turath-cite-panel" style="margin-top:5px;">
+            <p style="font-size:11px; color:#555; margin-top:0; margin-bottom:8px;">حدّد نصًا في مستندك أولاً، ثم اضغط الزر لجلب النص والبحث عنه في موسوعة تراث.</p>
+            <button class="btn" style="background-color:#1565c0;" onclick="loadSelectionForCite()">جلب النص المحدد من المستند</button>
+            <textarea id="cite-query-text" style="width:100%; height:70px; margin-top:8px; padding:8px; font-size:12px; border:1px solid #90caf9; border-radius:4px; box-sizing:border-box; resize:vertical;" placeholder="سيظهر هنا النص المحدد، ويمكنك تعديله قبل البحث"></textarea>
+            <button class="btn btn-secondary" style="margin-top:8px; background-color: #1565c0; border:none;" onclick="runCiteSearch()">ابحث في تراث</button>
+            <div id="cite-results" style="margin-top:10px;"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <script>
+        let globalTurathBooks = [];
+        let globalTurathAuthors = [];
+        let selectedBookData = null;
+        let turathRawPageText = "";
+
+        // تحميل بيانات جيت هاب عند بدء التشغيل
+        function initTurathData() {
+          const baseUrl = "https://ahmed-ye1.github.io/meshkah-data/";
+          
+          fetch(baseUrl + "meshkah_final_index.json")
+            .then(res => res.json())
+            .then(data => {
+              globalTurathBooks = data;
+              populateBooksDatalist(data);
+            })
+            .catch(err => console.error("فشل تحميل فهرس الكتب:", err));
+
+          fetch(baseUrl + "meshkah_authors_index.json")
+            .then(res => res.json())
+            .then(data => {
+              globalTurathAuthors = data;
+              populateAuthorsDatalist(data);
+            })
+            .catch(err => console.error("فشل تحميل فهرس المؤلفين:", err));
+        }
+
+        function populateBooksDatalist(books) {
+          const list = document.getElementById('books-datalist');
+          list.innerHTML = '';
+          books.forEach(b => {
+            let opt = document.createElement('option');
+            opt.value = b.n; // n = name
+            opt.dataset.id = b.i; // i = id
+            list.appendChild(opt);
+          });
+        }
+
+        function populateAuthorsDatalist(authors) {
+          const list = document.getElementById('authors-datalist');
+          list.innerHTML = '';
+          authors.forEach(a => {
+            let opt = document.createElement('option');
+            opt.value = a.n;
+            opt.dataset.id = a.i;
+            list.appendChild(opt);
+          });
+        }
+
+        function switchTurathMode() {
+              const mode = document.getElementById('turath-search-mode').value;
+              const authorGroup = document.getElementById('author-search-group');
+              
+              if (mode === 'author') {
+                authorGroup.style.display = 'block';
+              } else {
+                authorGroup.style.display = 'none';
+                populateBooksDatalist(globalTurathBooks); // إعادة عرض كل الكتب
+              }
+        }
+
+        function onAuthorSelected() {
+          const authorName = document.getElementById('author-input').value;
+          const author = globalTurathAuthors.find(a => a.n === authorName);
+          if (!author) return;
+
+          // تصفية الكتب الخاصة بهذا المؤلف فقط بناءً على مصفوفة المعرفات b
+          const authorBooks = globalTurathBooks.filter(b => author.b.includes(b.i));
+          populateBooksDatalist(authorBooks);
+          document.getElementById('book-input').value = '';
+        }
+
+        function onBookSelected() {
+          const bookName = document.getElementById('book-input').value;
+          selectedBookData = globalTurathBooks.find(b => b.n === bookName);
+          
+          if (selectedBookData) {
+            // ضبط الحد الأقصى للمجلدات والصفحات تلقائياً لتفادي أي تجاوز
+            document.getElementById('turath-vol').max = selectedBookData.v || 1;
+            document.getElementById('turath-pg').max = selectedBookData.p || 1000;
+          }
+        }
+
+        function previewTurathPage() {
+          if (!selectedBookData) {
+            return alert('الرجاء اختيار كتاب صحيح من القائمة.');
+          }
+          const pg = document.getElementById('turath-pg').value;
+          
+          showLoader(true);
+          google.script.run
+            .withSuccessHandler(res => {
+              showLoader(false);
+              if (res.error) {
+                alert(res.error);
+              } else {
+                let text = res.text.replace(/<[^>]+>/g, '').trim();
+                text = decodeHtmlEntities(text); // <<--- إضافة هذه الخطوة لفك ترميز الرموز مثل &quot;
+                text = text.replace(sallaRegex, 'ﷺ');
+                turathRawPageText = text; 
+                applyTurathTashkeelToggle();
+                document.getElementById('turath-preview-container').style.display = 'block';
+              }
+            })
+            .withFailureHandler(err => {
+              showLoader(false);
+              alert('خطأ: ' + err.message);
+            })
+            .fetchTurathPageAPI(selectedBookData.i, pg);
+        }
+
+        // يُعيد تطبيق إزالة التشكيل على النص الخام المحفوظ فور تبديل الخيار،
+        // دون الحاجة لإعادة "معاينة الصفحة"
+        function applyTurathTashkeelToggle() {
+          const checked = document.getElementById('turath-remove-tashkeel').checked;
+          document.getElementById('turath-preview-text').value =
+            checked ? removeTashkeel(turathRawPageText) : turathRawPageText;
+        }
+
+        function insertTurathCitation() {
+          const ta = document.getElementById('turath-preview-text');
+          // إدراج الجزء المحدد داخل الصندوق فقط؛ إن لم يُحدَّد شيء نُدرج الصندوق كاملاً
+          const hasSelection = ta.selectionEnd > ta.selectionStart;
+          const text = hasSelection ? ta.value.slice(ta.selectionStart, ta.selectionEnd) : ta.value;
+
+          const vol = document.getElementById('turath-vol').value;
+          const pg = document.getElementById('turath-pg').value;
+          if (!selectedBookData) return;
+
+          const sourceText = `${selectedBookData.n}، ج${vol} ص${pg}`;
+          insertData(text, sourceText, 'turath'); // بلا أقواس هنا؛ Code.gs يضيفها
+        }
+
+        // جلب النص الذي حدّده المستخدم في مستنده (توثيق نص محدد بالفعل)
+        function loadSelectionForCite() {
+          showLoader(true);
+          google.script.run
+            .withSuccessHandler(res => {
+              showLoader(false);
+              if (res.error) return alert(res.error);
+              document.getElementById('cite-query-text').value = res.text;
+            })
+            .withFailureHandler(err => { showLoader(false); alert('خطأ: ' + err.message); })
+            .getDocSelectionText();
+        }
+
+        // البحث في تراث بالنص المحدد (أو المعدَّل يدويًا)
+        function runCiteSearch() {
+          const q = document.getElementById('cite-query-text').value.trim();
+          if (!q) return alert('لا يوجد نص للبحث عنه.');
+
+          showLoader(true);
+          google.script.run
+            .withSuccessHandler(res => {
+              showLoader(false);
+              const box = document.getElementById('cite-results');
+              box.innerHTML = '';
+              if (res.error) { box.innerHTML = `<p style="color:#c0392b;">${res.error}</p>`; return; }
+
+              res.items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.style.marginBottom = '8px';
+                card.innerHTML = `
+                  <div style="font-weight:bold; font-size:13px;">${item.bookName || 'كتاب غير معروف'}</div>
+                  <div style="font-size:11px; color:#666;">${item.authorName || ''}${item.vol ? '، ج' + item.vol : ''}${item.page ? '، ص' + item.page : ''}</div>
+                  <div style="font-size:12px; margin:6px 0;">${item.snippet}</div>
+                  <button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin:0;">توثيق</button>
+                `;
+                card.querySelector('button').onclick = () => citeSelectedResult(item);
+                box.appendChild(card);
+              });
+
+              if (!res.items.length) box.innerHTML = '<p style="color:#888;">لا توجد نتائج.</p>';
+            })
+            .withFailureHandler(err => { showLoader(false); alert('خطأ: ' + err.message); })
+            .searchTurathText(q, 8);
+        }
+
+        // إدراج التوثيق مباشرة بعد النص المحدد في المستند (بدون إعادة كتابة النص)
+        function citeSelectedResult(item) {
+              let parts = [item.bookName];
+              if (item.authorName) parts.push(item.authorName);
+              let loc = [];
+              if (item.vol) loc.push('ج' + item.vol);
+              if (item.page) loc.push('ص' + item.page);
+              if (loc.length) parts.push(loc.join(' '));
+              const sourceText = parts.join('، ');
+
+              // بناء رابط مباشر للكتاب والصفحة في تراث
+              let turathUrl = `https://app.turath.io/book/${item.bookId}`;
+              if (item.page) turathUrl += `?page=${item.page}`;
+
+              showLoader(true);
+              google.script.run
+                .withSuccessHandler(() => { showLoader(false); alert('تم إدراج التوثيق.'); })
+                .withFailureHandler(err => { showLoader(false); alert('خطأ: ' + err.message); })
+                .insertCitationAfterSelection(sourceText, turathUrl); // تمرير الرابط للخلفية
+        }
+      </script>
+  </body>
+</html>

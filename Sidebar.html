@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html dir="rtl">
+    <head>
+      <base target="_top">
+      <?!= include('Styles'); ?> <!-- ملف الـ CSS -->
+    </head>
+    <body>
+      <div id="sys-error"></div>
+      <div id="loader">جاري المعالجة...</div>
+
+      <!-- دمج الأساسيات المشتركة أولاً لتكون متاحة لبقية الملفات -->
+      <?!= include('Shared_Script'); ?>
+
+      <!-- دمج المكونات المستقلة (واجهة + سكريبت) -->
+      <?!= include('View_Main'); ?>
+      <?!= include('View_Settings'); ?>
+      
+      <?!= include('View_Quran'); ?>
+      <?!= include('View_Hadith'); ?>
+      <?!= include('View_Turath'); ?>
+      
+      <?!= include('View_About'); ?>
+
+      <!-- دالة التشغيل التي تعمل عند فتح الإضافة -->
+      <script>
+        window.onload = function() {
+          if(typeof initSurahsDropdown === 'function') initSurahsDropdown();
+          if(typeof initHadithListeners === 'function') initHadithListeners();
+          if(typeof initTurathData === 'function') initTurathData();
+          if(typeof loadSettings === 'function') loadSettings();
+        };
+      </script>
+    </body>
+</html>

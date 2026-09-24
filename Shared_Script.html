@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+    <script>
+      // معالجة الأخطاء
+      window.onerror = function(msg, url, line) {
+        document.getElementById('sys-error').style.display = 'block';
+        document.getElementById('sys-error').innerText = 'خطأ: ' + msg + ' (السطر ' + line + ')';
+        return false;
+      };
+
+      // متغير مشترك لرمز "صلى الله عليه وسلم" (يُستخدم في القرآن والحديث وتراث)
+      const sallaRegex = /ص[\u064B-\u065F\u0670]*ل[\u064B-\u065F\u0670]*[ىيأای]?[\u064B-\u065F\u0670]*[\s\u200C]+ا?[\u064B-\u065F\u0670]*ل[\u064B-\u065F\u0670]*ل[\u064B-\u065F\u0670]*[هہ][\u064B-\u065F\u0670]*[\s\u200C]+ع[\u064B-\u065F\u0670]*ل[\u064B-\u065F\u0670]*[يی][\u064B-\u065F\u0670]*[هہ][\u064B-\u065F\u0670]*[\s\u200C]+و[\u064B-\u065F\u0670]*س[\u064B-\u065F\u0670]*ل[\u064B-\u065F\u0670]*م[\u064B-\u065F\u0670]*/g;
+
+      // دوال التنقل وإظهار التحميل
+      function nav(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+        document.getElementById(pageId).classList.add('active-page');
+      }
+
+      function showLoader(show) { 
+        document.getElementById('loader').style.display = show ? 'block' : 'none'; 
+      }
+
+      // دالة الإدراج الأساسية
+      function insertDataWithOptions(options) {
+        showLoader(true);
+        google.script.run
+          .withSuccessHandler(() => { showLoader(false); })
+          .withFailureHandler(err => { showLoader(false); alert(err.message); })
+          .insertContent(options);
+      }
+
+      // أدوات مساعدة للنصوص (تُستخدم في أكثر من قسم)
+      function removeTashkeel(text) {
+        if(!text) return "";
+        return text.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED\u08D3-\u08FF\u0640]/g, '');
+      }
+
+      function decodeHtmlEntities(str) {
+        const txt = document.createElement("textarea");
+        txt.innerHTML = str;
+        return txt.value;
+      }
+
+      function toggleFilter(filterId, arrowId) {
+        const content = document.getElementById(filterId);
+        const arrow = document.getElementById(arrowId);
+        if (content.style.display === 'block') {
+          content.style.display = 'none';
+          arrow.style.transform = 'rotate(0deg)';
+        } else {
+          content.style.display = 'block';
+          arrow.style.transform = 'rotate(180deg)';
+        }
+      }
+    </script>
+  </body>
+</html>

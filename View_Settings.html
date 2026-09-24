@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+        <!-- الإعدادات -->
+      <div id="settings-page" class="page">
+        <h2>الإعدادات <button class="btn btn-outline" style="padding:2px 5px; width:auto; float:left" onclick="nav('main-page')">عودة</button></h2>
+        
+        <div class="input-group" style="background: #e3f2fd; padding: 10px; border-radius: 4px; border: 1px solid #bbdefb;">
+          <label>مفتاح HadithAPI (للبحث الهيكلي فقط):</label>
+          <input type="password" id="set-apiKey" placeholder="ضع مفتاح API هنا...">
+        </div>
+
+        <div class="input-group" style="background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+          <div class="color-row"><label style="margin:0;">لون متن القرآن:</label><input type="color" id="set-qColor"></div>
+          <div class="color-row"><label style="margin:0;">لون توثيق القرآن:</label><input type="color" id="set-qSourceColor"></div>
+          <div class="color-row"><label style="margin:0;">لون التفسير:</label><input type="color" id="set-tColor"></div>
+          <hr style="border-top:1px solid #eee; margin:8px 0;">
+          <div class="color-row"><label style="margin:0;">لون متن الحديث:</label><input type="color" id="set-hColor"></div>
+          <div class="color-row"><label style="margin:0;">لون توثيق الحديث:</label><input type="color" id="set-hSourceColor"></div>
+          <div class="color-row"><label style="margin:0;">لون شرح الحديث:</label><input type="color" id="set-sColor"></div>
+          <hr style="border-top:1px solid #eee; margin:8px 0;">
+          <div class="color-row"><label style="margin:0;">لون متن الاقتباس (تراث):</label><input type="color" id="set-turColor"></div>
+          <div class="color-row"><label style="margin:0;">لون توثيق الاقتباس:</label><input type="color" id="set-turSourceColor"></div>
+          <hr style="border-top:1px solid #eee; margin:8px 0;">
+          <div style="font-size:12px; color:#666; margin-bottom:4px;">توثيق تشعيبي (تحويل التوثيق إلى رابط قابل للنقر):</div>
+          <div class="color-row"><label style="margin:0; font-weight:normal;">رابط توثيق القرآن:</label><input type="checkbox" id="set-qLink"></div>
+          <div class="color-row"><label style="margin:0; font-weight:normal;">رابط توثيق الحديث:</label><input type="checkbox" id="set-hLink"></div>
+          <div class="color-row"><label style="margin:0; font-weight:normal;">رابط توثيق تراث:</label><input type="checkbox" id="set-turLink"></div>
+        </div>
+
+        <div class="input-group">
+          <label>نوع الخط:</label>
+          <select id="set-font">
+            <option value="Arial">Arial</option>
+            <option value="Tahoma">Tahoma</option>
+            <option value="Amiri">Amiri</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>حجم المتن (للكل):</label><input type="number" id="set-fSize" min="8" max="36" value="14">
+        </div>
+        <button class="btn" onclick="saveSettings()">حفظ التعديلات</button>
+      </div>
+
+      <script>
+        function loadSettings() {
+          google.script.run.withSuccessHandler(settings => {
+            document.getElementById('set-qColor').value = settings.quranColor || '#000000';
+            document.getElementById('set-hColor').value = settings.hadithColor || '#000000';
+            document.getElementById('set-sColor').value = settings.sharhColor || '#333333';
+            document.getElementById('set-tColor').value = settings.tafsirColor || '#2980b9';
+            document.getElementById('set-qSourceColor').value = settings.quranSourceColor || '#7f8c8d';
+            document.getElementById('set-hSourceColor').value = settings.hadithSourceColor || '#7f8c8d';
+            document.getElementById('set-turColor').value = settings.turathColor || '#2c3e50';
+            document.getElementById('set-turSourceColor').value = settings.turathSourceColor || '#7f8c8d';
+            document.getElementById('set-qLink').checked = !!settings.quranLinkToggle;
+            document.getElementById('set-hLink').checked = !!settings.hadithLinkToggle;
+            document.getElementById('set-turLink').checked = !!settings.turathLinkToggle;
+            document.getElementById('set-font').value = settings.fontFamily || 'Arial';
+            document.getElementById('set-fSize').value = settings.fontSize || '14';
+            
+            if (settings.hadithApiKey) {
+              document.getElementById('set-apiKey').value = settings.hadithApiKey;
+            }
+          }).getSettings();
+        }
+
+        function saveSettings() {
+          const settings = {
+            quranColor: document.getElementById('set-qColor').value,
+            hadithColor: document.getElementById('set-hColor').value,
+            sharhColor: document.getElementById('set-sColor').value,
+            tafsirColor: document.getElementById('set-tColor').value,
+            quranSourceColor: document.getElementById('set-qSourceColor').value,
+            hadithSourceColor: document.getElementById('set-hSourceColor').value,
+            turathColor: document.getElementById('set-turColor').value,
+            turathSourceColor: document.getElementById('set-turSourceColor').value,
+            quranLinkToggle: document.getElementById('set-qLink').checked,
+            hadithLinkToggle: document.getElementById('set-hLink').checked,
+            turathLinkToggle: document.getElementById('set-turLink').checked,
+            fontFamily: document.getElementById('set-font').value,
+            fontSize: document.getElementById('set-fSize').value,
+            quranSourcePos: 'inline', 
+            hadithSourcePos: 'inline' 
+          };
+          
+          const apiKeyVal = document.getElementById('set-apiKey').value;
+          if(apiKeyVal) settings.hadithApiKey = apiKeyVal;
+
+          showLoader(true);
+          google.script.run.withSuccessHandler(() => {
+            showLoader(false);
+            alert('تم حفظ الإعدادات بنجاح');
+          }).saveSettings(settings);
+        }
+      </script>
+  </body>
+</html>

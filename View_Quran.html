@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+        <!-- القرآن الكريم -->
+      <div id="quran-page" class="page">
+        <h2>القرآن الكريم <button class="btn btn-outline" style="padding:2px 5px; width:auto; float:left" onclick="nav('main-page')">عودة</button></h2>
+        
+        <!-- الصندوق الأخضر: البحث النصي للآيات -->
+        <div class="input-group" style="background:#e8f5e9; padding:10px; border-radius:4px; border:1px solid #c8e6c9; margin-bottom: 15px;">
+          <h3 style="margin-top:0; margin-bottom:8px; color:#2e7d32; font-size:14px; border-bottom:1px solid #c8e6c9; padding-bottom:5px;">البحث النصي (بدون تفسير)</h3>
+          
+          <div class="input-group" style="margin-bottom: 8px;">
+            <label>ابحث بنص الآية:</label>
+            <div class="row" style="margin-bottom: 4px;">
+              <input type="text" id="quran-text" placeholder="مثال: يسألونك عن الأهلة" style="border-color: #a5d6a7;">
+              <button class="btn" style="width: 80px; margin-bottom: 0; background-color: #2e7d32;" onclick="searchQuranText()">بحث</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- الصندوق الأزرق: اختيار السورة والآيات والتفسير -->
+        <div class="input-group" style="background:#e3f2fd; padding:10px; border-radius:4px; border:1px solid #bbdefb; margin-bottom: 15px;">
+          <h3 style="margin-top:0; margin-bottom:8px; color:#1565c0; font-size:14px; border-bottom:1px solid #bbdefb; padding-bottom:5px;">إدراج الآيات بتفسيرها</h3>
+          
+          <div class="input-group" style="margin-bottom: 10px;">
+            <label>اختر السورة:</label>
+            <input list="surahs-list" id="surah-select" placeholder="اختر أو ابحث عن السورة..." onchange="updateAyahRange()" style="border-color: #90caf9;">
+            <datalist id="surahs-list"></datalist>
+          </div>
+
+          <div class="row input-group" style="margin-bottom: 10px;">
+            <div><label>من آية:</label><input type="number" id="ayah-from" min="1" value="1" style="border-color: #90caf9;"></div>
+            <div><label>إلى آية:</label><input type="number" id="ayah-to" min="1" value="1" style="border-color: #90caf9;"></div>
+          </div>
+
+          <div class="input-group" style="margin-bottom: 10px;">
+            <label>تفسير الآيات:</label>
+            <select id="tafsir-select" style="border-color: #90caf9;">
+              <option value="none">بدون تفسير</option>
+              <option value="1">التفسير الميسر</option>
+              <option value="2">تفسير الجلالين</option>
+              <option value="saadi">تفسير السعدي</option>
+              <option value="4">تفسير ابن كثير</option>
+              <option value="5">تفسير البغوي</option>
+              <option value="6">تفسير القرطبي</option>
+              <option value="7">تفسير الطبري</option>
+              <option value="sahih-int">اللغة الإنجليزية (Sahih International)</option>
+            </select>
+          </div>
+
+          <!-- فلتر التفسير -->
+          <div class="filter-toggle" onclick="toggleFilter('quran-filters', 'quran-arrow')" style="color: #1565c0; margin-bottom: 8px;">
+            <span id="quran-arrow">▼</span> خيارات التفسير
+          </div>
+          <div id="quran-filters" class="filter-content" style="border-top-color: #90caf9; margin-bottom: 15px;">
+              <label style="font-weight:normal;">
+                <input type="checkbox" id="tafsir-remove-tashkeel"> إزالة التشكيل من نص التفسير
+              </label>
+          </div>
+
+          <button class="btn btn-secondary" style="background-color: #1565c0; border:none; margin-bottom:0;" onclick="fetchQuranRange()">معاينة الآيات</button>
+        </div>
+
+        <!-- مساحة عرض النتائج (مشتركة بين البحثين) -->
+        <div id="quran-results"></div>
+      </div>
+      <script>
+        const surahsData = [
+          {"id":1,"name":"الفاتحة","ayahs":7}, {"id":2,"name":"البقرة","ayahs":286}, {"id":3,"name":"آل عمران","ayahs":200},
+          {"id":4,"name":"النساء","ayahs":176}, {"id":5,"name":"المائدة","ayahs":120}, {"id":6,"name":"الأنعام","ayahs":165},
+          {"id":7,"name":"الأعراف","ayahs":206}, {"id":8,"name":"الأنفال","ayahs":75}, {"id":9,"name":"التوبة","ayahs":129},
+          {"id":10,"name":"يونس","ayahs":109}, {"id":11,"name":"هود","ayahs":123}, {"id":12,"name":"يوسف","ayahs":111},
+          {"id":13,"name":"الرعد","ayahs":43}, {"id":14,"name":"إبراهيم","ayahs":52}, {"id":15,"name":"الحجر","ayahs":99},
+          {"id":16,"name":"النحل","ayahs":128}, {"id":17,"name":"الإسراء","ayahs":111}, {"id":18,"name":"الكهف","ayahs":110},
+          {"id":19,"name":"مريم","ayahs":98}, {"id":20,"name":"طه","ayahs":135}, {"id":21,"name":"الأنبياء","ayahs":112},
+          {"id":22,"name":"الحج","ayahs":78}, {"id":23,"name":"المؤمنون","ayahs":118}, {"id":24,"name":"النور","ayahs":64},
+          {"id":25,"name":"الفرقان","ayahs":77}, {"id":26,"name":"الشعراء","ayahs":227}, {"id":27,"name":"النمل","ayahs":93},
+          {"id":28,"name":"القصص","ayahs":88}, {"id":29,"name":"العنكبوت","ayahs":69}, {"id":30,"name":"الروم","ayahs":60},
+          {"id":31,"name":"لقمان","ayahs":34}, {"id":32,"name":"السجدة","ayahs":30}, {"id":33,"name":"الأحزاب","ayahs":73},
+          {"id":34,"name":"سبأ","ayahs":54}, {"id":35,"name":"فاطر","ayahs":45}, {"id":36,"name":"يس","ayahs":83},
+          {"id":37,"name":"الصافات","ayahs":182}, {"id":38,"name":"ص","ayahs":88}, {"id":39,"name":"الزمر","ayahs":75},
+          {"id":40,"name":"غافر","ayahs":85}, {"id":41,"name":"فصلت","ayahs":54}, {"id":42,"name":"الشورى","ayahs":53},
+          {"id":43,"name":"الزخرف","ayahs":89}, {"id":44,"name":"الدخان","ayahs":59}, {"id":45,"name":"الجاثية","ayahs":37},
+          {"id":46,"name":"الأحقاف","ayahs":35}, {"id":47,"name":"محمد","ayahs":38}, {"id":48,"name":"الفتح","ayahs":29},
+          {"id":49,"name":"الحجرات","ayahs":18}, {"id":50,"name":"ق","ayahs":45}, {"id":51,"name":"الذاريات","ayahs":60},
+          {"id":52,"name":"الطور","ayahs":49}, {"id":53,"name":"النجم","ayahs":62}, {"id":54,"name":"القمر","ayahs":55},
+          {"id":55,"name":"الرحمن","ayahs":78}, {"id":56,"name":"الواقعة","ayahs":96}, {"id":57,"name":"الحديد","ayahs":29},
+          {"id":58,"name":"المجادلة","ayahs":22}, {"id":59,"name":"الحشر","ayahs":24}, {"id":60,"name":"الممتحنة","ayahs":13},
+          {"id":61,"name":"الصف","ayahs":14}, {"id":62,"name":"الجمعة","ayahs":11}, {"id":63,"name":"المنافقون","ayahs":11},
+          {"id":64,"name":"التغابن","ayahs":18}, {"id":65,"name":"الطلاق","ayahs":12}, {"id":66,"name":"التحريم","ayahs":12},
+          {"id":67,"name":"الملك","ayahs":30}, {"id":68,"name":"القلم","ayahs":52}, {"id":69,"name":"الحاقة","ayahs":52},
+          {"id":70,"name":"المعارج","ayahs":44}, {"id":71,"name":"نوح","ayahs":28}, {"id":72,"name":"الجن","ayahs":28},
+          {"id":73,"name":"المزمل","ayahs":20}, {"id":74,"name":"المدثر","ayahs":56}, {"id":75,"name":"القيامة","ayahs":40},
+          {"id":76,"name":"الإنسان","ayahs":31}, {"id":77,"name":"المرسلات","ayahs":50}, {"id":78,"name":"النبأ","ayahs":40},
+          {"id":79,"name":"النازعات","ayahs":46}, {"id":80,"name":"عبس","ayahs":42}, {"id":81,"name":"التكوير","ayahs":29},
+          {"id":82,"name":"الانفطار","ayahs":19}, {"id":83,"name":"المطففين","ayahs":36}, {"id":84,"name":"الانشقاق","ayahs":25},
+          {"id":85,"name":"البروج","ayahs":22}, {"id":86,"name":"الطارق","ayahs":17}, {"id":87,"name":"الأعلى","ayahs":19},
+          {"id":88,"name":"الغاشية","ayahs":26}, {"id":89,"name":"الفجر","ayahs":30}, {"id":90,"name":"البلد","ayahs":20},
+          {"id":91,"name":"الشمس","ayahs":15}, {"id":92,"name":"الليل","ayahs":21}, {"id":93,"name":"الضحى","ayahs":11},
+          {"id":94,"name":"الشرح","ayahs":8}, {"id":95,"name":"التين","ayahs":8}, {"id":96,"name":"العلق","ayahs":19},
+          {"id":97,"name":"القدر","ayahs":5}, {"id":98,"name":"البينة","ayahs":8}, {"id":99,"name":"الزلزلة","ayahs":8},
+          {"id":100,"name":"العاديات","ayahs":11}, {"id":101,"name":"القارعة","ayahs":11}, {"id":102,"name":"التكاثر","ayahs":8},
+          {"id":103,"name":"العصر","ayahs":3}, {"id":104,"name":"الهمزة","ayahs":9}, {"id":105,"name":"الفيل","ayahs":5},
+          {"id":106,"name":"قريش","ayahs":4}, {"id":107,"name":"الماعون","ayahs":7}, {"id":108,"name":"الكوثر","ayahs":3},
+          {"id":109,"name":"الكافرون","ayahs":6}, {"id":110,"name":"النصر","ayahs":3}, {"id":111,"name":"المسد","ayahs":5},
+          {"id":112,"name":"الإخلاص","ayahs":4}, {"id":113,"name":"الفلق","ayahs":5}, {"id":114,"name":"الناس","ayahs":6}
+        ];
+
+        function initSurahsDropdown() {
+          const datalist = document.getElementById('surahs-list');
+          surahsData.forEach(s => {
+            let option = document.createElement('option');
+            option.value = s.id + ". " + s.name;
+            datalist.appendChild(option);
+          });
+        }
+
+        function updateAyahRange() {
+          const val = document.getElementById('surah-select').value;
+          const match = val.match(/^(\d+)/);
+          if(match) {
+            const surah = surahsData.find(s => s.id === parseInt(match[1]));
+            if(surah) {
+              document.getElementById('ayah-from').max = surah.ayahs;
+              document.getElementById('ayah-to').max = surah.ayahs;
+              document.getElementById('ayah-to').value = surah.ayahs;
+            }
+          }
+        }
+
+        function formatSurahName(rawName) { return rawName.replace(/^س[ُ]?ور[َ]?[ة]?[ُ]?\s*/, '').trim(); }
+
+        function searchQuranText() {
+          const query = document.getElementById('quran-text').value;
+          if(!query) return;
+          showLoader(true);
+          google.script.run
+            .withSuccessHandler(renderQuranResults)
+            .withFailureHandler(err => { showLoader(false); alert(err.message); })
+            .searchQuranByText(query);
+        }
+
+        function renderQuranResults(results) {
+          showLoader(false);
+          const div = document.getElementById('quran-results');
+          div.innerHTML = '';
+          if(!results || results.length === 0) { div.innerHTML = '<div class="error-msg">لا توجد نتائج مطابقة.</div>'; return; }
+          
+          results.forEach(res => {
+            const cleanName = formatSurahName(res.surah.name);
+            const sourceText = cleanName + " " + res.numberInSurah;
+            const ayahText = res.text + " ﴿" + res.numberInSurah + "﴾";
+            
+            // بناء رابط القرآن
+            const quranUrl = `https://quran.com/${res.surah.number}/${res.numberInSurah}`;
+            
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = '<div>' + ayahText + '</div><div style="color:#777; font-size:11px; margin-top:5px;">[' + sourceText + ']</div>';
+            
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerText = 'إدراج الآية';
+            btn.onclick = function() { 
+              insertDataWithOptions({ text: ayahText, source: sourceText, type: 'quran', sourceUrl: quranUrl }); 
+            };
+            
+            card.appendChild(btn);
+            div.appendChild(card);
+          });
+        }
+
+        function fetchQuranRange() {
+          const val = document.getElementById('surah-select').value;
+          const from = parseInt(document.getElementById('ayah-from').value);
+          const to = parseInt(document.getElementById('ayah-to').value);
+          
+          const tafsirSelect = document.getElementById('tafsir-select');
+          const tafsirId = tafsirSelect.value;
+          const tafsirName = tafsirSelect.options[tafsirSelect.selectedIndex].text;
+          
+          const match = val.match(/^(\d+)/);
+          if(!match) return alert('الرجاء اختيار السورة بشكل صحيح');
+          if (from > to) return alert('نطاق الآيات غير صحيح');
+          
+          showLoader(true);
+          google.script.run
+            .withSuccessHandler(renderQuranRange)
+            .withFailureHandler(err => { showLoader(false); alert(err.message); })
+            .getQuranAndTafsirRange(parseInt(match[1]), from, to, tafsirId, tafsirName);
+        }
+
+        function renderQuranRange(data) {
+          showLoader(false);
+          const div = document.getElementById('quran-results');
+          div.innerHTML = '';
+          
+          if(data.error) { div.innerHTML = '<div class="error-msg">'+data.error+'</div>'; return; }
+          
+          const verses = data.ayahs;
+          if(!verses || verses.length === 0) return;
+
+          const cleanName = formatSurahName(data.surahName);
+          let sourceText = verses.length === 1 ? cleanName + " " + verses[0].numberInSurah : cleanName + " " + verses[0].numberInSurah + "-" + verses[verses.length-1].numberInSurah;
+          
+          let fullAyahText = verses.map(v => v.text + " ﴿" + v.numberInSurah + "﴾").join(' ');
+          
+          // استخراج رقم السورة لبناء الرابط
+          const surahVal = document.getElementById('surah-select').value;
+          const surahIdMatch = surahVal.match(/^(\d+)/);
+          const surahId = surahIdMatch ? surahIdMatch[1] : "1";
+          const fromAyah = verses[0].numberInSurah;
+          const toAyah = verses[verses.length-1].numberInSurah;
+          const quranUrl = `https://quran.com/${surahId}/${fromAyah}-${toAyah}`;
+          
+          const cardAyah = document.createElement('div');
+          cardAyah.className = 'result-card';
+          cardAyah.innerHTML = '<div>' + fullAyahText + '</div><div style="color:#777; font-size:11px; margin-top:5px;">[' + sourceText + ']</div>';
+          
+          const btnAyah = document.createElement('button');
+          btnAyah.className = 'btn';
+          btnAyah.innerText = 'إدراج الآيات';
+          btnAyah.onclick = function() { 
+            insertDataWithOptions({ text: fullAyahText, source: sourceText, type: 'quran', sourceUrl: quranUrl }); 
+          };
+          
+          cardAyah.appendChild(btnAyah);
+          div.appendChild(cardAyah);
+
+          if (data.tafsirs && data.tafsirs.length > 0) {
+            let removeTashkeelFlag = document.getElementById('tafsir-remove-tashkeel').checked;
+            
+            let fullTafsirText = data.tafsirs.map(t => {
+                let txt = t.text;
+                if (removeTashkeelFlag) txt = removeTashkeel(txt);
+                return (verses.length > 1 ? "﴿" + t.numberInSurah + "﴾ " : "") + txt.trim();
+            }).join('\n\n');
+
+            fullTafsirText = fullTafsirText.replace(sallaRegex, 'ﷺ');
+            let tafsirSource = data.tafsirName || "التفسير";
+            
+            const cardTafsir = document.createElement('div');
+            cardTafsir.className = 'result-card';
+            cardTafsir.style.marginTop = '10px';
+            cardTafsir.style.borderTop = '3px solid #2980b9'; 
+            cardTafsir.innerHTML = '<div style="color:#1565c0; font-weight:bold; font-size:11px; margin-bottom:5px;">' + tafsirSource + ':</div><div>' + fullTafsirText.replace(/\n/g, '<br>') + '</div>';
+            
+            const btnTafsir = document.createElement('button');
+            btnTafsir.className = 'btn btn-secondary'; 
+            btnTafsir.innerText = 'إدراج التفسير';
+            btnTafsir.onclick = function() { 
+              // نوثق التفسير بنفس رابط الآية ليسهل الرجوع إليها
+              insertDataWithOptions({ text: fullTafsirText, source: tafsirSource, type: 'tafsir', sourceUrl: quranUrl }); 
+            };
+            
+            cardTafsir.appendChild(btnTafsir);
+            div.appendChild(cardTafsir);
+          }
+        }
+
+      </script>
+  </body>
+</html>

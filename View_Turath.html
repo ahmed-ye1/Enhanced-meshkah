@@ -200,7 +200,7 @@
           if (!selectedBookData) return;
 
           const sourceText = `${selectedBookData.n}، ج${vol} ص${pg}`;
-          insertData(text, sourceText, 'turath'); // بلا أقواس هنا؛ Code.gs يضيفها
+         insertDataWithOptions({ text: text, source: sourceText, type: 'turath' });
         }
 
         // جلب النص الذي حدّده المستخدم في مستنده (توثيق نص محدد بالفعل)

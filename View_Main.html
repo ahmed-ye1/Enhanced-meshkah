@@ -5,16 +5,50 @@
   </head>
   <body>
     <div id="main-page" class="page active-page">
-      <h2>
-        <img src="https://res.cloudinary.com/dhuob4fz4/image/upload/v1789950614/meshkah_logo_kwavmr.png" alt="شعار" style="width: 50px; height: 50px; vertical-align: middle; margin-left: 5px;">
+      
+      <h2 class="main-header">
+        <img src="https://res.cloudinary.com/dhuob4fz4/image/upload/v1789950614/meshkah_logo_kwavmr.png" alt="شعار" style="width: 55px; height: 55px; vertical-align: middle; margin-bottom: 8px;">
+        <br>
         مِشكاة (الباحث الإسلامي)
       </h2>
-      <button class="btn" onclick="nav('quran-page')">آيات قرآنية</button>
-      <button class="btn" onclick="nav('hadith-page')">أحاديث نبوية</button>
-      <button class="btn" style="background-color: #795548;" onclick="nav('turath-page')">مكتبة تراث (البحث والتوثيق)</button>
-      <button class="btn btn-secondary" onclick="nav('settings-page')">الإعدادات</button>
-      <button class="btn btn-secondary" onclick="nav('about-page')">حول التطبيق</button>
-      <div style="font-size: 11px; color: #888; text-align: center; margin-top: 15px;">الإصدار 1.0.0</div>
+      
+      <div class="nav-grid">
+        
+        <!-- آيات قرآنية (أخضر) -->
+        <div class="nav-card card-green" onclick="nav('quran-page')">
+          <img src="https://res.cloudinary.com/dhuob4fz4/image/upload/v1790526853/Meshkah_Quran1_guwczo.png" alt="آيات قرآنية">
+          <span>آيات قرآنية</span>
+        </div>
+        
+        <!-- أحاديث نبوية (أخضر) -->
+        <div class="nav-card card-green" onclick="nav('hadith-page')">
+          <img src="https://res.cloudinary.com/dhuob4fz4/image/upload/v1790526853/Meshkah_Sunnah1_dlw2rn.png" alt="أحاديث نبوية">
+          <span>أحاديث نبوية</span>
+        </div>
+
+        <!-- مكتبة تراث (عرض كامل - بني) -->
+        <div class="nav-card full-width card-brown" onclick="nav('turath-page')">
+          <img src="https://res.cloudinary.com/dhuob4fz4/image/upload/v1790526853/Meshkah_Turath1_ktwwiq.png" alt="مكتبة تراث">
+          <span>مكتبة تراث (البحث والتوثيق)</span>
+        </div>
+
+        <!-- الإعدادات (أزرق) -->
+        <div class="nav-card card-blue" onclick="nav('settings-page')">
+          <img src="https://res.cloudinary.com/dhuob4fz4/image/upload/v1790526853/Meshkah_Settings1_v33n3x.png" alt="الإعدادات">
+          <span>الإعدادات</span>
+        </div>
+
+        <!-- حول التطبيق (أزرق) -->
+        <div class="nav-card card-blue" onclick="nav('about-page')">
+          <img src="https://res.cloudinary.com/dhuob4fz4/image/upload/v1790526852/Meshkah_About1_p3ybbw.png" alt="حول التطبيق">
+          <span>حول التطبيق</span>
+        </div>
+        
+      </div>
+
+      <div style="font-size: 11px; color: #888; text-align: center; margin-top: 25px;">
+        الإصدار 1.0.0 (نسخة تجريبية - Beta)
+      </div>
     </div>
   </body>
 </html>

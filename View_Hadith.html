@@ -4,7 +4,7 @@
     <base target="_top">
   </head>
   <body>
-        <!-- الأحاديث النبوية -->
+      <!-- الأحاديث النبوية -->
       <div id="hadith-page" class="page">
         <h2>الأحاديث النبوية <button class="btn btn-outline" style="padding:2px 5px; width:auto; float:left" onclick="nav('main-page')">عودة</button></h2>
         
@@ -23,11 +23,12 @@
             <option value="al-silsila-sahiha">السلسلة الصحيحة</option>
           </select>
           <div class="row" style="margin-bottom: 4px;">
-            <input type="number" id="struct-num" placeholder="رقم الحديث...">
+            <!-- تم التعديل إلى type="text" ليقبل أحرف مثل 123a -->
+            <input type="text" id="struct-num" placeholder="رقم الحديث (مثال: 123 أو 123a)...">
             <button class="btn" style="width: 80px; margin-bottom: 0;" onclick="searchStruct()">بحث</button>
           </div>
 
-          <!-- قائمة الفلترة للبحث الهيكلي (بدون خيار الإنجليزية) -->
+          <!-- قائمة الفلترة للبحث الهيكلي -->
           <div class="filter-toggle" onclick="toggleFilter('struct-filters', 'struct-arrow')" style="color: #2e7d32;">
             <span id="struct-arrow">▼</span> فلترة البحث
           </div>
@@ -90,6 +91,14 @@
           </div>
         </div>
 
+        <!-- صندوق التحذير المدمج (يظهر للبحث النصي فقط) -->
+        <div id="translation-warning" style="display: none; background: #fff3cd; color: #856404; padding: 10px; border: 1px solid #ffeeba; margin-top: 15px; margin-bottom: 10px; border-radius: 4px; font-size: 12px; line-height: 1.6;">
+          ⚠️ <b>تنبيه أكاديمي:</b> ترقيم الأحاديث في نتائج البحث النصي (الدرر السنية) قد يختلف عن ترقيم (طبعة دار السلام) المعتمد للترجمة الإنجليزية. قد تظهر ترجمة لحديث آخر بسبب هذا الاختلاف.
+          <div style="margin-top: 6px;">
+            <label style="cursor: pointer; font-weight: normal;"><input type="checkbox" id="hide-trans-warning" onchange="dismissWarning()"> لا تريني هذا التنبيه مرة أخرى</label>
+          </div>
+        </div>
+
         <div id="hadith-results"></div>
       </div>
 
@@ -109,8 +118,20 @@
           "al-silsila-sahiha": "السلسلة الصحيحة"
         };
 
+        // قاموس أسماء الكتب بالإنجليزية للتوثيق الاحترافي
+        const englishBookNames = {
+          "صحيح البخاري": "Sahih al-Bukhari",
+          "صحيح مسلم": "Sahih Muslim",
+          "جامع الترمذي": "Jami` at-Tirmidhi",
+          "سنن أبي داود": "Sunan Abi Dawud",
+          "سنن النسائي": "Sunan an-Nasa'i",
+          "سنن ابن ماجه": "Sunan Ibn Majah",
+          "مسند أحمد": "Musnad Ahmad",
+          "مشكاة المصابيح": "Mishkat al-Masabih",
+          "السلسلة الصحيحة": "As-Silsilah As-Sahihah"
+        };
+
         function initHadithListeners() {
-          // يجب استدعاء هذه الدالة عند تحميل الصفحة لتفعيل مربعات اختيار الكتب
           document.querySelectorAll('.text-book-item').forEach(cb => {
             cb.addEventListener('change', () => {
               if (!cb.checked) document.getElementById('text-all-books').checked = false;
@@ -131,10 +152,7 @@
           google.script.run.withSuccessHandler(settings => {
             const apiKey = settings.hadithApiKey;
             if (!apiKey || apiKey.trim() === '') {
-              document.getElementById('hadith-results').innerHTML = 
-                `<div class="error-msg">
-                  يرجى إضافة مفتاح HadithAPI في <b>الإعدادات</b> للبحث الهيكلي.<br>
-                </div>`;
+              document.getElementById('hadith-results').innerHTML = '<div class="error-msg">يرجى إضافة مفتاح HadithAPI في <b>الإعدادات</b> للبحث الهيكلي.</div>';
               return;
             }
             callback(apiKey);
@@ -154,12 +172,14 @@
 
         function searchStruct() {
           const bookSlug = document.getElementById('struct-book').value;
-          const hadithNum = document.getElementById('struct-num').value;
+          const hadithNum = document.getElementById('struct-num').value.trim();
           if(!hadithNum) return alert('الرجاء كتابة رقم الحديث');
           
           checkApiKeyBeforeAction(function(apiKey) {
             showLoader(true);
             lastSearchType = 'struct';
+            // إخفاء التحذير لأنه خاص بالبحث النصي فقط
+            document.getElementById('translation-warning').style.display = 'none';
             google.script.run
               .withSuccessHandler(data => handleStructData(data))
               .withFailureHandler(err => { showLoader(false); document.getElementById('hadith-results').innerHTML = '<div class="error-msg">خطأ: ' + err.message + '</div>'; })
@@ -168,7 +188,7 @@
         }
 
         function searchText() {
-          const query = document.getElementById('text-query').value;
+          const query = document.getElementById('text-query').value.trim();
           if(!query) return;
           showLoader(true);
           lastSearchType = 'text';
@@ -176,6 +196,22 @@
             .withSuccessHandler(data => handleTextData(data))
             .withFailureHandler(err => { showLoader(false); document.getElementById('hadith-results').innerHTML = '<div class="error-msg">خطأ: ' + err.message + '</div>'; })
             .searchHadithTextDorarAPI(query);
+        }
+
+        // دوال التحكم بالتنبيه
+        function dismissWarning() {
+          if (document.getElementById('hide-trans-warning').checked) {
+            localStorage.setItem('hideMeshkahTransWarning', 'true');
+            document.getElementById('translation-warning').style.display = 'none';
+          }
+        }
+
+        function showWarningIfNeeded() {
+          if (localStorage.getItem('hideMeshkahTransWarning') !== 'true') {
+            document.getElementById('translation-warning').style.display = 'block';
+          } else {
+            document.getElementById('translation-warning').style.display = 'none';
+          }
         }
 
         function splitHadithText(originalText) {
@@ -251,9 +287,10 @@
 
             const apiBookSlug = item.bookSlug || (item.book && item.book.bookSlug) || '';
             const bookNameArabic = arabicBookNames[apiBookSlug] || 'موسوعة الأحاديث';
-            const sourceText = `${bookNameArabic} (${item.hadithNumber || ''})`;
+            
+            // تعديل التوثيق الهيكلي العربي ليكون: صحيح البخاري (1) [ط. دار السلام]
+            const sourceText = `${bookNameArabic} (${item.hadithNumber || ''}) [ط. دار السلام]`;
 
-            // إرفاق اسم الكتاب ليتم استخدامه في دالة createCard لزر الإنجليزية
             item.bookName = bookNameArabic;
 
             createCard(div, displayText, textToInsert, sourceText, item);
@@ -321,7 +358,14 @@
             }
           }
 
-          if (results.length === 0) { div.innerHTML = '<div class="error-msg">لا توجد نتائج مطابقة لتحديدك.</div>'; return; }
+          if (results.length === 0) { 
+            div.innerHTML = '<div class="error-msg">لا توجد نتائج مطابقة لتحديدك.</div>'; 
+            document.getElementById('translation-warning').style.display = 'none';
+            return; 
+          }
+
+          // إظهار التنبيه الذكي للمستخدم قبل النتائج
+          showWarningIfNeeded();
 
           const prioritizeSharh = document.getElementById('text-prioritize-sharh').checked;
           const prioritizeEnglish = document.getElementById('text-prioritize-english').checked;
@@ -329,7 +373,7 @@
           function getFinalWeight(item) {
             let baseWeight = getItemWeight(item);
             if (prioritizeEnglish && baseWeight <= 4) {
-              const supportedBooks = ['صحيح البخاري', 'صحيح مسلم', 'جامع الترمذي', 'سنن أبي داود', 'سنن النسائي', 'سنن ابن ماجه', 'مشكاة المصابيح'];
+              const supportedBooks = ['صحيح البخاري', 'صحيح مسلم', 'جامع الترمذي', 'سنن أبي داود', 'سنن النسائي', 'سنن ابن ماجه', 'مسند أحمد', 'مشكاة المصابيح'];
               if (item.bookName && item.hadithNumber && supportedBooks.some(b => item.bookName.startsWith(b))) {
                 return baseWeight - 200;
               }
@@ -404,19 +448,25 @@
               }
             }
 
+            // ختم "الدرر السنية" يضاف هنا لجميع نتائج البحث النصي سواء متفق عليه أو لا
+            sourceText += " - الدرر السنية";
+
             createCard(div, displayText, textToInsert, sourceText, primaryItem);
           });
         }
 
+        // تعديل التوثيق النصي العربي ليختم بـ [الدرر السنية]
         function buildSingleSourceText(item) {
           const bName = item.bookName || 'موسوعة الأحاديث';
           let numText = item.hadithNumber ? ` (${item.hadithNumber})` : "";
           let gradeText = "";
+          
           if (item.grade) {
             let gradeClean = item.grade.replace(/[\[\]]/g, '').trim();
             let mohdith = item.mohdith ? " - " + item.mohdith.replace('المحدث:', '').trim() : "";
             gradeText = ` [${gradeClean}${mohdith}]`;
           }
+          
           return `${bName}${numText}${gradeText}`;
         }
 
@@ -431,9 +481,20 @@
           btnContainer.style.marginTop = '10px';
           btnContainer.style.flexWrap = 'wrap';
 
-          // بناء رابط بحث عن الحديث في موقع الدرر السنية بأول 50 حرف من الحديث لضمان الدقة
-          let searchSnippet = removeTashkeel(primaryItem.hadithArabic).substring(0, 50).trim();
-          let hadithUrl = `https://dorar.net/hadith/search?q=${encodeURIComponent(searchSnippet)}`;
+          // --- الحل الجذري والذكي للرابط التشعيبي ---
+          let hadithUrl = '';
+          if (lastSearchType === 'text') {
+            // 1. إذا كان البحث نصياً (الدرر السنية): نأخذ أول 50 حرف للبحث لأن المتن يكون نقياً
+            let searchSnippet = removeTashkeel(primaryItem.hadithArabic || '').substring(0, 50).trim();
+            hadithUrl = 'https://dorar.net/hadith/search?q=' + encodeURIComponent(searchSnippet);
+          } else {
+            // 2. إذا كان البحث هيكلياً (HadithAPI): نعتمد على (اسم الكتاب + رقمه) للبحث المباشر
+            // هذا يعفينا تماماً من مشكلة السند ويضمن دقة الرابط 100%
+            let enBook = englishBookNames[primaryItem.bookName] || primaryItem.bookName;
+            let targetNum = primaryItem.hadithNumber || '';
+            hadithUrl = 'https://sunnah.com/search?q=' + encodeURIComponent(enBook + " " + targetNum);
+          }
+          // -----------------------------------------
 
           const btnInsertHadith = document.createElement('button');
           btnInsertHadith.className = 'btn';
@@ -444,9 +505,9 @@
           };
           btnContainer.appendChild(btnInsertHadith); 
 
-          // زر الإنجليزية
+          // زر الترجمة الإنجليزية
           if (primaryItem && primaryItem.bookName && primaryItem.hadithNumber) {
-            const supportedBooks = ['صحيح البخاري', 'صحيح مسلم', 'جامع الترمذي', 'سنن أبي داود', 'سنن النسائي', 'سنن ابن ماجه', 'مشكاة المصابيح'];
+            const supportedBooks = ['صحيح البخاري', 'صحيح مسلم', 'جامع الترمذي', 'سنن أبي داود', 'سنن النسائي', 'سنن ابن ماجه', 'مسند أحمد', 'مشكاة المصابيح'];
             let isSupported = supportedBooks.some(b => primaryItem.bookName.startsWith(b));
             
             if (isSupported) {
@@ -455,17 +516,20 @@
               btnInsertEnglish.style.margin = '0';
               btnInsertEnglish.innerText = 'إدراج بالإنجليزية';
               btnInsertEnglish.onclick = function() {
-                let sunnahComUrl = `https://sunnah.com/search?q=${encodeURIComponent(primaryItem.bookName + " " + primaryItem.hadithNumber)}`;
+                
+                let enBook = englishBookNames[primaryItem.bookName] || "Hadith Collection";
+                let targetNum = primaryItem.hadithNumber;
+                let enSourceText = `${enBook} (${targetNum}) [Darussalam]`;
+                let sunnahComUrl = 'https://sunnah.com/search?q=' + encodeURIComponent(`${enBook} ${targetNum}`);
                 
                 if (primaryItem.hasOwnProperty('hadithEnglish')) {
-                    let enText = primaryItem.hadithEnglish || "النص الإنجليزي غير متوفر.";
+                    let enText = primaryItem.hadithEnglish || "English translation not available.";
                     enText = enText.replace(sallaRegex, 'ﷺ');
-                    let enBook = primaryItem.book ? primaryItem.book.bookName : primaryItem.bookName;
-                    let enSource = enBook + " (" + primaryItem.hadithNumber + ") [HadithAPI]";
-                    if (enText === "النص الإنجليزي غير متوفر.") {
-                      alert(enText);
+                    
+                    if (enText === "English translation not available.") {
+                      alert("عفواً، الترجمة الإنجليزية غير متوفرة لهذا الحديث.");
                     } else {
-                      insertDataWithOptions({ text: enText, source: enSource, type: 'hadith', sourceUrl: sunnahComUrl });
+                      insertDataWithOptions({ text: enText, source: enSourceText, type: 'hadith', sourceUrl: sunnahComUrl });
                     }
                 } else {
                     checkApiKeyBeforeAction(function(apiKey) {
@@ -478,12 +542,13 @@
                           } else {
                             let enText = res.englishText;
                             enText = enText.replace(sallaRegex, 'ﷺ');
-                            let enSource = res.englishBook + " (" + res.englishNumber + ") [HadithAPI]";
-                            insertDataWithOptions({ text: enText, source: enSource, type: 'hadith', sourceUrl: sunnahComUrl });
+                            let finalNum = res.englishNumber || targetNum;
+                            let finalEnSource = `${enBook} (${finalNum}) [Darussalam]`;
+                            insertDataWithOptions({ text: enText, source: finalEnSource, type: 'hadith', sourceUrl: sunnahComUrl });
                           }
                         })
                         .withFailureHandler(err => { showLoader(false); alert(err.message); })
-                        .fetchEnglishHadithByBookAndNum(primaryItem.bookName, primaryItem.hadithNumber, apiKey);
+                        .fetchEnglishHadithByBookAndNum(primaryItem.bookName, targetNum, apiKey);
                     });
                 }
               };
@@ -506,7 +571,7 @@
           div.appendChild(card);
         }
 
-        function insertSharhData(sharhId, hadithUrl) { // <-- 1. استقبال الرابط هنا
+        function insertSharhData(sharhId, hadithUrl) { 
           showLoader(true);
           google.script.run
             .withSuccessHandler(res => {
@@ -514,30 +579,20 @@
               if (res.error) {
                 alert(res.error);
               } else {
-                // 1. تحويل وسوم HTML الأساسية إلى أسطر للحفاظ على الهيكلة قبل التنظيف
                 let htmlFormatted = res.sharh.replace(/<(br|p|div)[^>]*>/gi, '\n');
-                
-                // 2. إزالة باقي وسوم HTML
                 let cleanSharh = htmlFormatted.replace(/<[^>]+>/g, '').trim();
-                
-                // 3. توحيد الأسطر الفارغة المتعددة
                 cleanSharh = cleanSharh.replace(/\n\s*\n/g, '\n\n');
 
-                // 4. الفلتر الذكي: عزل الشرح الصافي وقص معلومات الحديث والتخريج
                 let takhrijIndex = cleanSharh.indexOf('التخريج :');
                 if (takhrijIndex === -1) takhrijIndex = cleanSharh.indexOf('التخريج:'); 
                 let hokmIndex = cleanSharh.indexOf('خلاصة حكم المحدث :');
-                
-                // تحديد آخر نقطة ظهرت فيها معلومات التخريج أو الحكم
                 let splitPoint = Math.max(takhrijIndex, hokmIndex);
                 
                 if (splitPoint !== -1) {
-                  // البحث عن أول سطر فارغ بعد التخريج (والذي يبدأ بعده الشرح دائماً)
                   let doubleNewline = cleanSharh.indexOf('\n\n', splitPoint);
                   if (doubleNewline !== -1) {
                     cleanSharh = cleanSharh.substring(doubleNewline).trim();
                   } else {
-                    // بديل احتياطي إذا لم يوجد سطر فارغ، يقص بعد سطر التخريج مباشرة
                     let singleNewline = cleanSharh.indexOf('\n', splitPoint + 10);
                     if (singleNewline !== -1) {
                       cleanSharh = cleanSharh.substring(singleNewline).trim();
@@ -545,7 +600,6 @@
                   }
                 }
 
-                // 5. تطبيق فلتر إزالة التشكيل إذا كان مفعلاً
                 let removeTashkeelFlag = false;
                 if (lastSearchType === 'struct') {
                   removeTashkeelFlag = document.getElementById('struct-remove-tashkeel').checked;
@@ -557,15 +611,12 @@
                   cleanSharh = removeTashkeel(cleanSharh);
                 }
 
-                // فك التشفير للرموز مثل &quot; ثم استبدال صلى الله عليه وسلم
                 cleanSharh = decodeHtmlEntities(cleanSharh);
                 cleanSharh = cleanSharh.replace(sallaRegex, 'ﷺ');
 
-                // 6. تجهيز النص النهائي والإدراج
                 let sharhText = "\nالشرح: " + cleanSharh; 
                 let source = "الشرح من الموسوعة الحديثية بالدرر السنية";
                 
-                // 7. استخدام الدالة الجديدة لتفعيل الرابط التشعيبي
                 insertDataWithOptions({ text: sharhText, source: source, type: 'sharh', sourceUrl: hadithUrl });
               }
             })

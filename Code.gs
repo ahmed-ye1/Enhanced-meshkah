@@ -36,6 +36,15 @@ function getSettings() {
     turathLinkToggle: props.turathLinkToggle === 'true',
     hadithLinkToggle: props.hadithLinkToggle === 'true',
     quranLinkToggle: props.quranLinkToggle === 'true',
+    
+    // إعدادات التوثيق الجديدة (مفعلة تلقائياً)
+    citeQuran: props.citeQuran !== 'false',
+    citeTafsir: props.citeTafsir !== 'false',
+    citeHadith: props.citeHadith !== 'false',
+    citeSharh: props.citeSharh !== 'false',
+    citeTurath: props.citeTurath !== 'false',
+    tafsirLinkToggle: props.tafsirLinkToggle === 'true',
+    
     hadithApiKey: props.hadithApiKey || ''
   };
 }
@@ -210,6 +219,21 @@ function insertContent(payload) {
   if (!cursor) throw new Error('الرجاء وضع مؤشر الفأرة في المكان المراد الإدراج فيه.');
 
   var settings = getSettings();
+  
+  // --- فحص إعدادات إخفاء التوثيق ---
+  var citeMap = {
+    'quran': settings.citeQuran,
+    'tafsir': settings.citeTafsir,
+    'hadith': settings.citeHadith,
+    'sharh': settings.citeSharh,
+    'turath': settings.citeTurath
+  };
+  
+  // إذا كان إعداد التوثيق لهذا النوع معطلاً (false)، قم بمسح نص التوثيق تماماً
+  if (citeMap[payload.type] === false) {
+    payload.source = "";
+  }
+
   var sourcePos = payload.type === 'quran' ? settings.quranSourcePos : settings.hadithSourcePos;
   if (sourcePos === 'footnote') { sourcePos = 'inline'; }
 
@@ -222,10 +246,11 @@ function insertContent(payload) {
     fullText = textPart + sourcePart + " ";
   } else {
     sourcePart = (sourcePos === 'inline' && payload.source) ? ". [" + payload.source + "]" : ".";
+    // إذا تم مسح التوثيق وكان النوع قرآن أو حديث، نضع نقطة فقط في النهاية
+    if (!payload.source) { sourcePart = "."; }
     fullText = textPart + sourcePart + " "; 
   }
   
-  // الحصول على الفقرة الأصلية قبل الإدراج
   var startElement = cursor.getElement();
   var startPara = startElement;
   while (startPara && startPara.getType() !== DocumentApp.ElementType.PARAGRAPH && startPara.getType() !== DocumentApp.ElementType.LIST_ITEM) {
@@ -234,35 +259,30 @@ function insertContent(payload) {
   
   var insertedElement = cursor.insertText(fullText);
   
-  // --- فحص دقيق للغة: إذا لم يحتوِ النص على أي حرف عربي، فهو إنجليزي ---
+  // فحص دقيق للغة
   var isEnglish = !(/[\u0600-\u06FF]/.test(textPart));
   
-  // --- تطبيق الاتجاه والمحاذاة بذكاء ---
   var newlinesCount = (fullText.match(/\n/g) || []).length;
   var currentPara = startPara;
   
   for (var i = 0; i <= newlinesCount; i++) {
     if (currentPara && (currentPara.getType() === DocumentApp.ElementType.PARAGRAPH || currentPara.getType() === DocumentApp.ElementType.LIST_ITEM)) {
-      
       if (isEnglish) {
-        // إذا كان إنجليزياً: افرض الاتجاه لليسار والمحاذاة لليسار
         currentPara.setLeftToRight(true);
         currentPara.setAlignment(DocumentApp.HorizontalAlignment.LEFT);
       } else {
-        // إذا كان عربياً: لا تتدخل أبداً إلا إذا كانت الفقرة يسارية (ورثتها من نص إنجليزي سابق)
         if (currentPara.isLeftToRight() !== false) {
           currentPara.setLeftToRight(false);
-          currentPara.setAlignment(null); // ترك المحاذاة للقيمة الافتراضية الطبيعية للـ RTL
+          currentPara.setAlignment(null); 
         }
       }
-      
     }
     if (i < newlinesCount && currentPara) {
       currentPara = currentPara.getNextSibling();
     }
   }
 
-  // --- إعداد الألوان والخطوط ---
+  // إعداد الألوان والخطوط
   var mainColorMap = {
     quran: settings.quranColor,
     sharh: settings.sharhColor,
@@ -275,12 +295,11 @@ function insertContent(payload) {
   mainStyle[DocumentApp.Attribute.FOREGROUND_COLOR] = mainColorMap[payload.type] || settings.hadithColor;
   insertedElement.setAttributes(mainStyle);
 
-  // --- لون التوثيق: تم حذف شرط newlinesCount === 0 الذي كان يمنع تلوين
-  //     التوثيق كلما وضعناه في سطر جديد (حال الشرح والتفسير وتراث دائمًا) ---
+  // تلوين التوثيق فقط إن وجد
   if (sourcePart !== "" && sourcePart !== ".") {
     var srcColorMap = {
       quran: settings.quranSourceColor,
-      tafsir: settings.quranSourceColor, // يتبع لون توثيق القرآن؛ أضف tafsirSourceColor مستقلاً لاحقًا إن أردت فصله
+      tafsir: settings.quranSourceColor,
       sharh: settings.hadithSourceColor,
       turath: settings.turathSourceColor
     };
@@ -293,8 +312,14 @@ function insertContent(payload) {
       var endOffset = startOffset + sourcePart.length - 1; 
       insertedElement.setAttributes(startOffset, endOffset, sourceStyle);
 
-      // توثيق تشعيبي اختياري: يعمل فقط إذا فُعّل التبديل لهذا النوع ووُجد رابط فعلي
-      var linkToggleMap = { quran: settings.quranLinkToggle, hadith: settings.hadithLinkToggle, turath: settings.turathLinkToggle };
+      // --- التعديل هنا: إضافة التفسير والشرح لخريطة الروابط التشعبية ---
+      var linkToggleMap = { 
+        quran: settings.quranLinkToggle, 
+        hadith: settings.hadithLinkToggle, 
+        turath: settings.turathLinkToggle,
+        tafsir: settings.tafsirLinkToggle, // رابط التفسير
+      };
+      
       if (linkToggleMap[payload.type] && payload.sourceUrl) {
         insertedElement.setLinkUrl(startOffset, endOffset, payload.sourceUrl);
       }

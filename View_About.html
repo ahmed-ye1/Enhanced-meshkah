@@ -8,38 +8,47 @@
       <div id="about-page" class="page">
         <h2>حول التطبيق <button class="btn btn-outline" style="padding:2px 5px; width:auto; float:left" onclick="nav('main-page')">عودة</button></h2>
         
-        <div class="result-card" style="line-height: 1.8; font-size: 13px;">
-          <img src="https://res.cloudinary.com/dhuob4fz4/image/upload/v1789950614/meshkah_logo_kwavmr.png" alt="شعار مِشكاة" style="width: 100px; height: 100px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
-          <h3 style="color: #2c3e50; margin-bottom: 8px;">إضافة مِشكاة (الباحث الإسلامي)</h3>
-          <p style="margin-bottom: 10px;">أداة مخصصة لطلبة العلم الشرعي لإدراج الآيات القرآنية والتفاسير والأحاديث النبوية وشروحاتها مع التوثيق العلمي الدقيق .</p>
+        <div class="result-card about-card">
+          <img src="https://res.cloudinary.com/dhuob4fz4/image/upload/v1789950614/meshkah_logo_kwavmr.png" alt="شعار مِشكاة" class="about-logo">
+          <h3 class="about-title">مِشكاة (الباحث الإسلامي)</h3>
+          <p style="text-align: center; margin-bottom: 15px; color: #444;">
+            أداة متكاملة لطلبة العلم والباحثين لإدراج الآيات القرآنية وتفاسيرها، الأحاديث النبوية وشروحاتها، واقتباسات من الكتب الشرعية مع التوثيق العلمي الدقيق.
+          </p>
           
-          <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+          <hr class="divider">
           
-          <strong style="color: #2980b9;">المصادر والتقنيات المستخدمة (APIs):</strong>
-          <ul style="padding-right: 20px; margin-top: 5px; margin-bottom: 10px;">
+          <span class="section-title">المصادر والتقنيات المستخدمة (APIs):</span>
+          <ul class="api-list">
             <li><strong>القرآن الكريم:</strong> Alquran.Cloud API.</li>
-            <li><strong>التفاسير :</strong> Quran-Tafseer API (التفاسير العربية).</li>
-            <li><strong>الأحاديث النبوية:</strong> HadithAPI ( الكتب الستة وغيرها) وموسوعة الدرر السنية.</li>
+            <li><strong>التفاسير:</strong> Quran-Tafseer API و Quran.com.</li>
+            <li><strong>الأحاديث النبوية:</strong> HadithAPI (الكتب الستة وغيرها) وموسوعة الدرر السنية.</li>
+            <li><strong>الكتب الشرعية:</strong> Turath API (مكتبة تراث للبحث والاستخراج).</li>
           </ul>
-          
-          <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-          
-          <strong style="color: #2980b9;">شكر وتقدير خاص:</strong>
-          <p style="margin-top: 5px; margin-bottom: 10px;">نتقدم بخالص الشكر والامتنان لأصحاب الجهود التقنية والـ APIs الوسيطة التي ساهمت في تيسير هذه البيانات:</p>
-          <div style="margin-bottom: 5px;">
-            • <strong>أحمد الطبراني:</strong> 
-            <a href="https://github.com/AhmedElTabarani" target="_blank" style="color: #2980b9; text-decoration: underline;">GitHub Profile</a>
+
+          <div class="academic-note">
+            <strong>📌 تنبيه أكاديمي حول الترقيم:</strong><br>
+            يوجد اختلاف في أرقام بعض الأحاديث نظراً لاختلاف الطبعات؛ حيث تعتمد <b>الدرر السنية</b> على الترقيم الكلاسيكي (مثل ترقيم محمد فؤاد عبد الباقي وفتح الباري)، بينما يعتمد <b>HadithAPI</b> على ترقيم طبعة <b>دار السلام</b>.
           </div>
-          <div>
+          
+          <hr class="divider">
+          
+          <span class="section-title">شكر وتقدير خاص:</span>
+          <p style="margin-top: 5px; margin-bottom: 10px;">نتقدم بخالص الشكر والامتنان لأصحاب الجهود التقنية والـ APIs الوسيطة التي ساهمت في تيسير وصول هذه البيانات:</p>
+          
+          <div class="credit-item">
+            • <strong>أحمد الطبراني:</strong> 
+            <a href="https://github.com/AhmedElTabarani" target="_blank">GitHub Profile</a>
+          </div>
+          <div class="credit-item">
             • <strong>رجيب:</strong> 
-            <a href="https://github.com/ragaeeb" target="_blank" style="color: #2980b9; text-decoration: underline;">GitHub Profile</a>
+            <a href="https://github.com/ragaeeb" target="_blank">GitHub Profile</a>
           </div>
 
-          <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+          <hr class="divider">
           
-          <strong style="color: #2980b9;">الدعم والتواصل:</strong>
-          <p style="margin-top: 5px; margin-bottom: 0;">للاقتراحات والإبلاغ عن أخطاء، يسعدنا تواصلكم عبر البريد الإلكتروني:<br>
-          <a href="mailto:ahmedposswork@gmail.com" style="color: #2980b9; font-weight: bold;">ahmedposswork@gmail.com</a></p>
+          <span class="section-title">الدعم والتواصل:</span>
+          <p style="margin-top: 5px; margin-bottom: 0;">للاقتراحات والإبلاغ عن الأخطاء، يسعدنا تواصلكم عبر البريد الإلكتروني:<br>
+          <a href="mailto:ahmedposswork@gmail.com" style="color: #2980b9; font-weight: bold; margin-top: 5px; display: inline-block;">ahmedposswork@gmail.com</a></p>
         </div>
       </div>
   </body>

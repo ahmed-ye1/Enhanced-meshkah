@@ -4,7 +4,7 @@
     <base target="_top">
   </head>
   <body>
-        <!-- القرآن الكريم -->
+      <!-- القرآن الكريم -->
       <div id="quran-page" class="page">
         <h2>القرآن الكريم <button class="btn btn-outline" style="padding:2px 5px; width:auto; float:left" onclick="nav('main-page')">عودة</button></h2>
         
@@ -155,7 +155,7 @@
             const ayahText = res.text + " ﴿" + res.numberInSurah + "﴾";
             
             // بناء رابط القرآن
-            const quranUrl = `https://quran.com/${res.surah.number}/${res.numberInSurah}`;
+            const quranUrl = 'https://quran.com/' + res.surah.number + '/' + res.numberInSurah;
             
             const card = document.createElement('div');
             card.className = 'result-card';
@@ -205,16 +205,16 @@
 
           const cleanName = formatSurahName(data.surahName);
           let sourceText = verses.length === 1 ? cleanName + " " + verses[0].numberInSurah : cleanName + " " + verses[0].numberInSurah + "-" + verses[verses.length-1].numberInSurah;
-          
           let fullAyahText = verses.map(v => v.text + " ﴿" + v.numberInSurah + "﴾").join(' ');
           
-          // استخراج رقم السورة لبناء الرابط
+          // بناء رابط القرآن
           const surahVal = document.getElementById('surah-select').value;
           const surahIdMatch = surahVal.match(/^(\d+)/);
           const surahId = surahIdMatch ? surahIdMatch[1] : "1";
           const fromAyah = verses[0].numberInSurah;
           const toAyah = verses[verses.length-1].numberInSurah;
-          const quranUrl = `https://quran.com/${surahId}/${fromAyah}-${toAyah}`;
+          let rangeStr = fromAyah === toAyah ? fromAyah : fromAyah + '-' + toAyah;
+          const quranUrl = 'https://quran.com/' + surahId + '/' + rangeStr;
           
           const cardAyah = document.createElement('div');
           cardAyah.className = 'result-card';
@@ -242,6 +242,27 @@
             fullTafsirText = fullTafsirText.replace(sallaRegex, 'ﷺ');
             let tafsirSource = data.tafsirName || "التفسير";
             
+            // --- بناء رابط التفسير بناءً على القاموس ---
+            const tafsirSlugs = {
+              "1": "muyassar", "2": "jalalayn", "saadi": "saadi",
+              "4": "ibn-katheer", "5": "baghawi", "6": "qurtubi", "7": "tabari"
+            };
+            
+            const tafsirSelect = document.getElementById('tafsir-select');
+            const tId = tafsirSelect.value;
+            let tafsirUrl = "";
+            
+            if (tId === 'sahih-int') {
+              // موقع quran.com للترجمة الإنجليزية
+              tafsirUrl = 'https://quran.com/' + surahId + '/' + rangeStr + '?translations=20';
+            } else if (tafsirSlugs[tId]) {
+              // موقع tafsir.app للتفاسير العربية (تم التعديل لاستخدام علامات التنصيص العادية)
+              tafsirUrl = 'https://tafsir.app/' + tafsirSlugs[tId] + '/' + surahId + '/' + fromAyah;
+            } else {
+              tafsirUrl = quranUrl; // رابط احتياطي للقرآن في حال الخطأ
+            }
+            // -------------------------------------------
+            
             const cardTafsir = document.createElement('div');
             cardTafsir.className = 'result-card';
             cardTafsir.style.marginTop = '10px';
@@ -252,8 +273,8 @@
             btnTafsir.className = 'btn btn-secondary'; 
             btnTafsir.innerText = 'إدراج التفسير';
             btnTafsir.onclick = function() { 
-              // نوثق التفسير بنفس رابط الآية ليسهل الرجوع إليها
-              insertDataWithOptions({ text: fullTafsirText, source: tafsirSource, type: 'tafsir', sourceUrl: quranUrl }); 
+              // نمرر رابط التفسير المخصص
+              insertDataWithOptions({ text: fullTafsirText, source: tafsirSource, type: 'tafsir', sourceUrl: tafsirUrl }); 
             };
             
             cardTafsir.appendChild(btnTafsir);
